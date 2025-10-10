@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SJF Simulator - anak lucuh</title>
+<title>SJF Simulator - anak luchu</title>
 <style>
 * { box-sizing: border-box; }
 body {
@@ -161,6 +161,25 @@ td {
   padding: 8px;
 }
 
+/* Explanation box */
+.explanation {
+  margin-top: 25px;
+  background: rgba(0,191,255,0.1);
+  border-left: 4px solid #00e5ff;
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0,191,255,0.2);
+  animation: fadeUp 1.5s ease;
+}
+.explanation h3 {
+  color: #00e5ff;
+  margin-top: 0;
+}
+.explanation p {
+  font-size: 14px;
+  color: #b3e5fc;
+}
+
 /* Animations */
 @keyframes fadeUp { from { opacity: 0; transform: translateY(20px);} to {opacity:1; transform: translateY(0);} }
 @keyframes fadeDown { from {opacity:0; transform:translateY(-20px);} to {opacity:1; transform:translateY(0);} }
@@ -176,7 +195,7 @@ td {
 </header>
 
 <div class="container">
-  <div class="tip">Masukkan data proses kamu di bawah ini, trus klik <b>Jalankan Simulasi</b>'>'</div>
+  <div class="tip">Masukkan data proses kamu di bawah ini, trus tinggal klik <b>Jalankan Simulasi</b>.</div>
 
   <div class="input-section">
     <div class="row">
@@ -192,8 +211,8 @@ td {
     </div>
     <div style="text-align:center; margin-top:15px;">
       <button id="addProc">Tambahin Proses</button>
-      <button id="clearProcs">Hapus Semua</button>
-      <button id="run" class="primary">Jalankan Simulasii</button>
+      <button id="clearProcs">Hapus Semuah</button>
+      <button id="run" class="primary">Jalankan Simulasi</button>
     </div>
     <p id="procList" style="text-align:center; margin-top:12px;">Belum ada proses nichh</p>
   </div>
@@ -202,6 +221,7 @@ td {
     <div class="summary" id="summary"></div>
     <div class="gantt" id="gantt"></div>
     <div id="tableWrap"></div>
+    <div id="explanation" class="explanation"></div>
   </div>
 </div>
 
@@ -311,6 +331,27 @@ function renderOutput(res,title){
   res.table.forEach(x=>t+=`<tr><td>${x.id}</td><td>${x.arrival}</td><td>${x.burst}</td><td>${x.start}</td><td>${x.completion}</td><td>${x.waiting}</td><td>${x.turnaround}</td></tr>`);
   t+="</table>";
   document.getElementById("tableWrap").innerHTML=t;
+
+  // Generate Explanation Text
+  const explain = `
+  <h3>Jadi Kan wee, gini laa dia Penjelasan Hasil Perhitungannya</h3>
+  <p>Simulasi menggunakan <b>${title}</b>.</p>
+  <p><b>Rumus-rumus utama:</b></p>
+  <ul>
+    <li><b>Completion Time (CT)</b> = waktu saat proses selesai dijalankan.</li>
+    <li><b>Turnaround Time (TAT)</b> = CT - Arrival Time (AT)</li>
+    <li><b>Waiting Time (WT)</b> = TAT - Burst Time (BT)</li>
+  </ul>
+  <p>Jadi kan wee, tiap baris pada tabel di atas nunjukin waktu mulai (Start), waktu selesai (Completion), serta perhitungan TAT dan WT untuk masing-masing proses.</p>
+  <p><b>Contoh:</b><br>
+  Misalkan proses pertama (${res.table[0].id}) memiliki Arrival Time = ${res.table[0].arrival}, Burst Time = ${res.table[0].burst}, dan Completion Time = ${res.table[0].completion}.<br>
+  Maka:<br>
+  TAT = ${res.table[0].completion} - ${res.table[0].arrival} = <b>${res.table[0].turnaround}</b><br>
+  WT = ${res.table[0].turnaround} - ${res.table[0].burst} = <b>${res.table[0].waiting}</b>
+  </p>
+  <p>Artinya, proses tersebut menunggu CPU selama <b>${res.table[0].waiting}</b> satuan waktu sebelum dieksekusi, dan selesai total dalam <b>${res.table[0].turnaround}</b> satuan waktu.</p>
+  `;
+  document.getElementById("explanation").innerHTML = explain;
 }
 </script>
 </body>
