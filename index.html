@@ -227,7 +227,7 @@ td {
   padding-left: 6px;
 }
 
-/* Figure caption */
+
 .figcap {
   text-align: center;
   font-size: 13px;
@@ -235,7 +235,7 @@ td {
   margin-top: 6px;
 }
 
-/* Animations */
+
 @keyframes fadeUp { from { opacity: 0; transform: translateY(20px);} to {opacity:1; transform: translateY(0);} }
 @keyframes fadeDown { from {opacity:0; transform:translateY(-20px);} to {opacity:1; transform:translateY(0);} }
 @keyframes grow { to {opacity: 1; transform: scale(1);} }
@@ -279,7 +279,7 @@ td {
 
     <div id="tableWrap"></div>
 
-    <!-- Detailed Gantt to appear directly below the result table -->
+    
     <div id="ganttDetailedWrap" class="ganttDetailed" style="display:none;">
       <div id="timeline" class="timeline"></div>
       <div id="timelineTicks" class="timelineTicks"></div>
@@ -291,9 +291,7 @@ td {
 </div>
 
 <script>
-// ===============================
-// LATAR BELAKANG PARTIKEL (tidak diubah)
-// ===============================
+
 const canvas = document.getElementById('bg');
 const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
@@ -324,9 +322,7 @@ function animate() {
 }
 animate();
 
-// ===============================
-// FUNGSI UTAMA: SJF Non-Preemptive
-// ===============================
+/
 function sjfNonPreemptive(procs) {
   let proses = JSON.parse(JSON.stringify(procs)).map(p => ({
     id: p.id,
@@ -348,7 +344,7 @@ function sjfNonPreemptive(procs) {
       waktuSekarang = proses.find(p => !selesai.includes(p)).arrival;
       continue;
     }
-    // Pilih proses dengan burst terkecil
+    
     ready.sort((a, b) => a.burst - b.burst);
     let p = ready[0];
     let mulai = waktuSekarang;
@@ -375,9 +371,7 @@ function sjfNonPreemptive(procs) {
   return { schedule: jadwal, table: tabel, avgWT, avgTAT };
 }
 
-// ===============================
-// FUNGSI UTAMA: SJF Preemptive (SRTF)
-// ===============================
+
 function sjfPreemptive(procs) {
   let proses = JSON.parse(JSON.stringify(procs)).map(p => ({
     id: p.id,
@@ -431,10 +425,7 @@ function sjfPreemptive(procs) {
   return { schedule: jadwal, table: tabel, avgWT, avgTAT };
 }
 
-// ===============================
-// BAGIAN INTERAKSI DAN TAMPILAN
-// ===============================
-let customProcs = [];
+
 
 function refreshList() {
   const list = document.getElementById("procList");
@@ -468,20 +459,18 @@ document.getElementById("run").onclick = () => {
   renderOutput(hasil, mode === "pre" ? "Preemptive (SRTF)" : "Non-Preemptive");
 };
 
-// ===============================
-// RENDER OUTPUT: TABEL + GANTT + PENJELASAN
-// ===============================
+
 function renderOutput(res, modeText) {
   document.getElementById("output").style.display = "block";
 
-  // Ringkasan
+  
   document.getElementById("summary").innerHTML = `
     <b>Mode: ${modeText}</b><br>
     Rata-rata Waiting Time: <b>${res.avgWT.toFixed(2)}</b> |
     Rata-rata Turnaround Time: <b>${res.avgTAT.toFixed(2)}</b>
   `;
 
-  // Tabel hasil
+  
   let tableHTML = `
     <table>
       <tr><th>ID</th><th>Arrival</th><th>Burst</th><th>Start</th>
@@ -497,9 +486,7 @@ function renderOutput(res, modeText) {
   tableHTML += "</table>";
   document.getElementById("tableWrap").innerHTML = tableHTML;
 
-  // ===============================
-  // GANTT CHART seperti makalah
-  // ===============================
+  
   let ganttHTML = `<div class="gantt" style="flex-direction: column; align-items:center;">`;
   ganttHTML += `<div style="display:flex;">`;
   res.schedule.forEach(s => {
@@ -516,7 +503,7 @@ function renderOutput(res, modeText) {
   ganttHTML += `</div></div>`;
   document.getElementById("gantt").innerHTML = ganttHTML;
 
-  // Penjelasan mendetail
+  
   const p0 = res.table[0];
   document.getElementById("explanation").innerHTML = `
     <h3>Penjelasan Perhitungan Algoritma SJF (${modeText})</h3>
