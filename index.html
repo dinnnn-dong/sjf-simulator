@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SJF Simulator - anak luchu</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SJF Simulator - anak luchu (Detailed Gantt & Explanations)</title>
 <style>
 * { box-sizing: border-box; }
 body {
@@ -164,11 +164,11 @@ td {
 /* Explanation box */
 .explanation {
   margin-top: 25px;
-  background: rgba(0,191,255,0.1);
+  background: rgba(0,191,255,0.06);
   border-left: 4px solid #00e5ff;
   padding: 15px;
   border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0,191,255,0.2);
+  box-shadow: 0 0 10px rgba(0,191,255,0.12);
   animation: fadeUp 1.5s ease;
 }
 .explanation h3 {
@@ -178,6 +178,61 @@ td {
 .explanation p {
   font-size: 14px;
   color: #b3e5fc;
+  line-height: 1.5;
+}
+
+/* Detailed Gantt (new) */
+.ganttDetailed {
+  margin-top: 18px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 0 10px rgba(0,191,255,0.08);
+}
+.timeline {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  height: 58px;
+  margin-bottom: 6px;
+  overflow-x: auto;
+}
+.segment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  padding: 8px 10px;
+  border-radius: 4px;
+  font-weight: bold;
+  background: linear-gradient(90deg,#e0f7fa,#b3e5fc);
+  color: #001f3f;
+  border: 1px solid rgba(0,191,255,0.18);
+  box-shadow: 0 0 8px rgba(0,191,255,0.06);
+  white-space: nowrap;
+}
+.timelineTicks {
+  display: flex;
+  justify-content: flex-start;
+  gap: 0;
+  margin-top: 6px;
+  font-size: 12px;
+  color: #b3e5fc;
+}
+.tick {
+  min-width: 40px;
+  text-align: center;
+  border-left: 1px dashed rgba(0,191,255,0.15);
+  padding-left: 6px;
+}
+
+/* Figure caption */
+.figcap {
+  text-align: center;
+  font-size: 13px;
+  color: #b3e5fc;
+  margin-top: 6px;
 }
 
 /* Animations */
@@ -191,7 +246,7 @@ td {
 
 <header>
   <h1>SJF Interactive Simulator</h1>
-  <p>Visualisasi sjf dengan Mode Input Bebas</p>
+  <p>Visualisasi SJF dengan Mode Input Bebas + Gantt Chart & Penjelasan Detail</p>
 </header>
 
 <div class="container">
@@ -219,140 +274,268 @@ td {
 
   <div id="output" style="display:none;">
     <div class="summary" id="summary"></div>
+    <!-- This simple gantt (small segments) is kept for animation, but the detailed timeline below is the main one -->
     <div class="gantt" id="gantt"></div>
+
     <div id="tableWrap"></div>
+
+    <!-- Detailed Gantt to appear directly below the result table -->
+    <div id="ganttDetailedWrap" class="ganttDetailed" style="display:none;">
+      <div id="timeline" class="timeline"></div>
+      <div id="timelineTicks" class="timelineTicks"></div>
+      <div class="figcap">Figure 4.2: Gantt chart SJF</div>
+    </div>
+
     <div id="explanation" class="explanation"></div>
   </div>
 </div>
 
 <script>
-// Particles Background
+// ===============================
+// LATAR BELAKANG PARTIKEL (tidak diubah)
+// ===============================
 const canvas = document.getElementById('bg');
 const ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 let particles = [];
-for(let i=0;i<80;i++) particles.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,r:Math.random()*2,dx:(Math.random()-0.5)*0.5,dy:(Math.random()-0.5)*0.5});
-function animate(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle="#00bcd4";
-  particles.forEach(p=>{
-    ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
-    p.x+=p.dx; p.y+=p.dy;
-    if(p.x<0||p.x>canvas.width)p.dx*=-1;
-    if(p.y<0||p.y>canvas.height)p.dy*=-1;
+for (let i = 0; i < 80; i++) {
+  particles.push({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    r: Math.random() * 2,
+    dx: (Math.random() - 0.5) * 0.5,
+    dy: (Math.random() - 0.5) * 0.5
+  });
+}
+function animate() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#00bcd4";
+  particles.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fill();
+    p.x += p.dx;
+    p.y += p.dy;
+    if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
+    if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
   });
   requestAnimationFrame(animate);
 }
 animate();
 
-// Core Logic
-function clone(a){return JSON.parse(JSON.stringify(a))}
+// ===============================
+// FUNGSI UTAMA: SJF Non-Preemptive
+// ===============================
+function sjfNonPreemptive(procs) {
+  let proses = JSON.parse(JSON.stringify(procs)).map(p => ({
+    id: p.id,
+    arrival: +p.arrival,
+    burst: +p.burst
+  }));
 
-function sjfNonPreemptive(procs){
-  procs=clone(procs).map(p=>({...p,arrival:+p.arrival,burst:+p.burst}));
-  procs.sort((a,b)=>a.arrival-b.arrival||a.burst-b.burst);
-  let time=0;const done=[];const sched=[];const table=[];
-  while(done.length<procs.length){
-    const ready=procs.filter(p=>!done.includes(p)&&p.arrival<=time);
-    if(!ready.length){time=procs.find(p=>!done.includes(p)).arrival;continue;}
-    ready.sort((a,b)=>a.burst-b.burst);
-    const p=ready[0];const start=time;const end=start+p.burst;
-    sched.push({id:p.id,start,end});
-    table.push({id:p.id,arrival:p.arrival,burst:p.burst,start,completion:end,waiting:start-p.arrival,turnaround:end-p.arrival});
-    done.push(p);
-    time=end;
+  proses.sort((a, b) => a.arrival - b.arrival || a.burst - b.burst);
+
+  let waktuSekarang = 0;
+  let selesai = [];
+  let jadwal = [];
+  let tabel = [];
+
+  while (selesai.length < proses.length) {
+    // Ambil proses yang sudah datang
+    let ready = proses.filter(p => !selesai.includes(p) && p.arrival <= waktuSekarang);
+    if (!ready.length) {
+      waktuSekarang = proses.find(p => !selesai.includes(p)).arrival;
+      continue;
+    }
+    // Pilih proses dengan burst terkecil
+    ready.sort((a, b) => a.burst - b.burst);
+    let p = ready[0];
+    let mulai = waktuSekarang;
+    let selesaiWaktu = mulai + p.burst;
+
+    jadwal.push({ id: p.id, start: mulai, end: selesaiWaktu });
+    tabel.push({
+      id: p.id,
+      arrival: p.arrival,
+      burst: p.burst,
+      start: mulai,
+      completion: selesaiWaktu,
+      waiting: mulai - p.arrival,
+      turnaround: selesaiWaktu - p.arrival
+    });
+
+    selesai.push(p);
+    waktuSekarang = selesaiWaktu;
   }
-  const avgWT=table.reduce((a,b)=>a+b.waiting,0)/table.length;
-  const avgTAT=table.reduce((a,b)=>a+b.turnaround,0)/table.length;
-  return {schedule:sched,table,avgWT,avgTAT};
+
+  let avgWT = tabel.reduce((a, b) => a + b.waiting, 0) / tabel.length;
+  let avgTAT = tabel.reduce((a, b) => a + b.turnaround, 0) / tabel.length;
+
+  return { schedule: jadwal, table: tabel, avgWT, avgTAT };
 }
 
-function sjfPreemptive(procs){
-  procs=clone(procs).map(p=>({...p,arrival:+p.arrival,burst:+p.burst,rem:+p.burst}));
-  const sched=[],done=[];let time=0;
-  while(done.length<procs.length){
-    const ready=procs.filter(p=>!done.includes(p)&&p.arrival<=time&&p.rem>0);
-    if(!ready.length){time=procs.find(p=>!done.includes(p)).arrival;continue;}
-    ready.sort((a,b)=>a.rem-b.rem);
-    const p=ready[0];
-    const last=sched[sched.length-1];
-    if(!last||last.id!==p.id)sched.push({id:p.id,start:time,end:time+1});
-    else last.end++;
-    p.rem--;time++;
-    if(p.rem===0)done.push(p);
+// ===============================
+// FUNGSI UTAMA: SJF Preemptive (SRTF)
+// ===============================
+function sjfPreemptive(procs) {
+  let proses = JSON.parse(JSON.stringify(procs)).map(p => ({
+    id: p.id,
+    arrival: +p.arrival,
+    burst: +p.burst,
+    remaining: +p.burst
+  }));
+
+  let jadwal = [];
+  let selesai = [];
+  let waktu = 0;
+
+  while (selesai.length < proses.length) {
+    let ready = proses.filter(p => p.arrival <= waktu && p.remaining > 0);
+    if (ready.length === 0) {
+      waktu++;
+      continue;
+    }
+    ready.sort((a, b) => a.remaining - b.remaining);
+    let p = ready[0];
+
+    let last = jadwal[jadwal.length - 1];
+    if (!last || last.id !== p.id) {
+      jadwal.push({ id: p.id, start: waktu, end: waktu + 1 });
+    } else {
+      last.end++;
+    }
+
+    p.remaining--;
+    if (p.remaining === 0) selesai.push(p);
+    waktu++;
   }
-  const table=procs.map(p=>{
-    const first=sched.find(s=>s.id===p.id).start;
-    const last=sched.filter(s=>s.id===p.id).at(-1).end;
-    return {id:p.id,arrival:p.arrival,burst:p.burst,start:first,completion:last,waiting:last-p.arrival-p.burst,turnaround:last-p.arrival};
+
+  let tabel = proses.map(p => {
+    let firstStart = jadwal.find(j => j.id === p.id).start;
+    let lastEnd = jadwal.filter(j => j.id === p.id).at(-1).end;
+    return {
+      id: p.id,
+      arrival: p.arrival,
+      burst: p.burst,
+      start: firstStart,
+      completion: lastEnd,
+      waiting: lastEnd - p.arrival - p.burst,
+      turnaround: lastEnd - p.arrival
+    };
   });
-  const avgWT=table.reduce((a,b)=>a+b.waiting,0)/table.length;
-  const avgTAT=table.reduce((a,b)=>a+b.turnaround,0)/table.length;
-  return {schedule:sched,table,avgWT,avgTAT};
+
+  let avgWT = tabel.reduce((a, b) => a + b.waiting, 0) / tabel.length;
+  let avgTAT = tabel.reduce((a, b) => a + b.turnaround, 0) / tabel.length;
+
+  return { schedule: jadwal, table: tabel, avgWT, avgTAT };
 }
 
-// UI
-let customProcs=[];
-function refreshList(){
-  document.getElementById("procList").innerHTML=customProcs.length?
-  customProcs.map(p=>`${p.id} (AT=${p.arrival}, BT=${p.burst}, ${p.mode})`).join("<br>"):"Belum ada proses.";
+// ===============================
+// BAGIAN INTERAKSI DAN TAMPILAN
+// ===============================
+let customProcs = [];
+
+function refreshList() {
+  const list = document.getElementById("procList");
+  list.innerHTML = customProcs.length
+    ? customProcs.map(p => `${p.id} (AT=${p.arrival}, BT=${p.burst}, ${p.mode})`).join("<br>")
+    : "Belum ada proses.";
 }
 
-document.getElementById("addProc").onclick=()=>{
-  const id=document.getElementById("procId").value||`P${customProcs.length+1}`;
-  const arrival=+document.getElementById("arrival").value||0;
-  const burst=+document.getElementById("burst").value||1;
-  const mode=document.getElementById("mode").value;
-  customProcs.push({id,arrival,burst,mode});
+document.getElementById("addProc").onclick = () => {
+  const id = document.getElementById("procId").value || `P${customProcs.length + 1}`;
+  const arrival = +document.getElementById("arrival").value || 0;
+  const burst = +document.getElementById("burst").value || 1;
+  const mode = document.getElementById("mode").value;
+  customProcs.push({ id, arrival, burst, mode });
   refreshList();
 };
-document.getElementById("clearProcs").onclick=()=>{customProcs=[];refreshList();};
-document.getElementById("run").onclick=()=>{
-  if(!customProcs.length){alert("Masukkan minimal 1 proses!");return;}
-  const hasPre=customProcs.some(p=>p.mode==="pre");
-  const mode=hasPre?"pre":"non";
-  const res=mode==="pre"?sjfPreemptive(customProcs):sjfNonPreemptive(customProcs);
-  renderOutput(res,"Mode: "+(mode==="pre"?"Preemptive (SRTF)":"Non-Preemptive"));
+
+document.getElementById("clearProcs").onclick = () => {
+  customProcs = [];
+  refreshList();
 };
 
-function renderOutput(res,title){
-  document.getElementById("output").style.display="block";
-  document.getElementById("summary").innerHTML=`<b>${title}</b><br>Avg Waiting Time: <b>${res.avgWT.toFixed(2)}</b> | Avg Turnaround: <b>${res.avgTAT.toFixed(2)}</b>`;
-  const gantt=document.getElementById("gantt");
-  gantt.innerHTML="";
-  res.schedule.forEach((s,i)=>{
-    const d=document.createElement("div");
-    d.className="gseg";
-    d.style.animationDelay=`${i*0.15}s`;
-    d.innerHTML=`${s.id}<br><small>${s.start}-${s.end}</small>`;
-    gantt.appendChild(d);
-  });
-  let t=`<table><tr><th>ID</th><th>Arrival</th><th>Burst</th><th>Start</th><th>Completion</th><th>Waiting</th><th>Turnaround</th></tr>`;
-  res.table.forEach(x=>t+=`<tr><td>${x.id}</td><td>${x.arrival}</td><td>${x.burst}</td><td>${x.start}</td><td>${x.completion}</td><td>${x.waiting}</td><td>${x.turnaround}</td></tr>`);
-  t+="</table>";
-  document.getElementById("tableWrap").innerHTML=t;
+document.getElementById("run").onclick = () => {
+  if (!customProcs.length) {
+    alert("Masukkan minimal 1 proses!");
+    return;
+  }
+  const hasPre = customProcs.some(p => p.mode === "pre");
+  const mode = hasPre ? "pre" : "non";
+  const hasil = mode === "pre" ? sjfPreemptive(customProcs) : sjfNonPreemptive(customProcs);
+  renderOutput(hasil, mode === "pre" ? "Preemptive (SRTF)" : "Non-Preemptive");
+};
 
-  // Generate Explanation Text
-  const explain = `
-  <h3>Jadi Kan wee, gini laa dia Penjelasan Hasil Perhitungannya</h3>
-  <p>Simulasi menggunakan <b>${title}</b>.</p>
-  <p><b>Rumus-rumus utama:</b></p>
-  <ul>
-    <li><b>Completion Time (CT)</b> = waktu saat proses selesai dijalankan.</li>
-    <li><b>Turnaround Time (TAT)</b> = CT - Arrival Time (AT)</li>
-    <li><b>Waiting Time (WT)</b> = TAT - Burst Time (BT)</li>
-  </ul>
-  <p>Jadi kan wee, tiap baris pada tabel di atas nunjukin waktu mulai (Start), waktu selesai (Completion), serta perhitungan TAT dan WT untuk masing-masing proses.</p>
-  <p><b>Contoh:</b><br>
-  Misalkan proses pertama (${res.table[0].id}) memiliki Arrival Time = ${res.table[0].arrival}, Burst Time = ${res.table[0].burst}, dan Completion Time = ${res.table[0].completion}.<br>
-  Maka:<br>
-  TAT = ${res.table[0].completion} - ${res.table[0].arrival} = <b>${res.table[0].turnaround}</b><br>
-  WT = ${res.table[0].turnaround} - ${res.table[0].burst} = <b>${res.table[0].waiting}</b>
-  </p>
-  <p>Artinya, proses tersebut menunggu CPU selama <b>${res.table[0].waiting}</b> satuan waktu sebelum dieksekusi, dan selesai total dalam <b>${res.table[0].turnaround}</b> satuan waktu.</p>
+// ===============================
+// RENDER OUTPUT: TABEL + GANTT + PENJELASAN
+// ===============================
+function renderOutput(res, modeText) {
+  document.getElementById("output").style.display = "block";
+
+  // Ringkasan
+  document.getElementById("summary").innerHTML = `
+    <b>Mode: ${modeText}</b><br>
+    Rata-rata Waiting Time: <b>${res.avgWT.toFixed(2)}</b> |
+    Rata-rata Turnaround Time: <b>${res.avgTAT.toFixed(2)}</b>
   `;
-  document.getElementById("explanation").innerHTML = explain;
+
+  // Tabel hasil
+  let tableHTML = `
+    <table>
+      <tr><th>ID</th><th>Arrival</th><th>Burst</th><th>Start</th>
+      <th>Completion</th><th>Waiting</th><th>Turnaround</th></tr>
+  `;
+  res.table.forEach(p => {
+    tableHTML += `<tr>
+      <td>${p.id}</td><td>${p.arrival}</td><td>${p.burst}</td>
+      <td>${p.start}</td><td>${p.completion}</td>
+      <td>${p.waiting}</td><td>${p.turnaround}</td>
+    </tr>`;
+  });
+  tableHTML += "</table>";
+  document.getElementById("tableWrap").innerHTML = tableHTML;
+
+  // ===============================
+  // GANTT CHART seperti makalah
+  // ===============================
+  let ganttHTML = `<div class="gantt" style="flex-direction: column; align-items:center;">`;
+  ganttHTML += `<div style="display:flex;">`;
+  res.schedule.forEach(s => {
+    ganttHTML += `
+      <div class="gseg" style="min-width:${(s.end - s.start) * 25}px;">
+        ${s.id}
+      </div>`;
+  });
+  ganttHTML += `</div><div style="display:flex;">`;
+  res.schedule.forEach(s => {
+    ganttHTML += `<div style="min-width:${(s.end - s.start) * 25}px;text-align:left;font-size:12px;">${s.start}</div>`;
+  });
+  ganttHTML += `<div style="font-size:12px;">${res.schedule.at(-1).end}</div>`;
+  ganttHTML += `</div></div>`;
+  document.getElementById("gantt").innerHTML = ganttHTML;
+
+  // Penjelasan mendetail
+  const p0 = res.table[0];
+  document.getElementById("explanation").innerHTML = `
+    <h3>Penjelasan Perhitungan Algoritma SJF (${modeText})</h3>
+    <p>Proses dieksekusi berdasarkan waktu burst terkecil yang telah tiba pada CPU. Jika ada proses baru yang datang dengan waktu eksekusi lebih pendek (khusus mode preemptive), maka CPU berpindah ke proses tersebut.</p>
+    <p><b>Rumus yang digunakan:</b></p>
+    <ul>
+      <li><b>Completion Time (CT)</b> = Waktu saat proses selesai dijalankan</li>
+      <li><b>Turnaround Time (TAT)</b> = CT - Arrival Time</li>
+      <li><b>Waiting Time (WT)</b> = TAT - Burst Time</li>
+    </ul>
+    <p>Contoh perhitungan untuk <b>${p0.id}</b>:</p>
+    <ul>
+      <li>Arrival Time = ${p0.arrival}</li>
+      <li>Burst Time = ${p0.burst}</li>
+      <li>Completion Time = ${p0.completion}</li>
+      <li>Turnaround Time = ${p0.completion} - ${p0.arrival} = <b>${p0.turnaround}</b></li>
+      <li>Waiting Time = ${p0.turnaround} - ${p0.burst} = <b>${p0.waiting}</b></li>
+    </ul>
+    <p>Artinya, proses <b>${p0.id}</b> menunggu CPU selama <b>${p0.waiting}</b> satuan waktu sebelum dijalankan, dan membutuhkan total waktu <b>${p0.turnaround}</b> untuk selesai sepenuhnya.</p>
+  `;
 }
 </script>
-</body>
-</html>
