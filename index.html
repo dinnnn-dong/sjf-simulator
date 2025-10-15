@@ -15,7 +15,7 @@ body {
   min-height: 100vh;
 }
 
-/* Background Particles */
+/* Background */
 canvas#bg {
   position: fixed;
   top: 0;
@@ -58,7 +58,7 @@ header p {
   animation: fadeUp 1.5s ease;
 }
 
-/* Neon Input Fields */
+/* Input  */
 input, select {
   width: 100%;
   background: transparent;
@@ -246,7 +246,7 @@ td {
 
 <header>
   <h1>SJF Interactive Simulator</h1>
-  <p>Visualisasi SJF dengan Mode Input Bebas + Gantt Chart & Penjelasan Detail</p>
+  <p>Visualisasi SJF dengan Mode Input Bebas </p>
 </header>
 
 <div class="container">
@@ -322,7 +322,6 @@ function animate() {
 }
 animate();
 
-/
 function sjfNonPreemptive(procs) {
   let proses = JSON.parse(JSON.stringify(procs)).map(p => ({
     id: p.id,
