@@ -181,7 +181,7 @@ td {
   line-height: 1.5;
 }
 
-/* Detailed Gantt (new) */
+/*Gantt*/
 .ganttDetailed {
   margin-top: 18px;
   background: rgba(255,255,255,0.03);
@@ -322,6 +322,7 @@ function animate() {
 }
 animate();
 
+let customProcs = [];
 function sjfNonPreemptive(procs) {
   let proses = JSON.parse(JSON.stringify(procs)).map(p => ({
     id: p.id,
